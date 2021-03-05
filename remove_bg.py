@@ -1,12 +1,29 @@
 # src: https://stackoverflow.com/questions/54082300/how-to-create-a-transparent-mask-in-opencv-python
 import cv2
 import numpy as np
-from os import walk
+import urllib.request
+import ssl
+import csv
+import os
+import time
 
 CANNY_THRESH_1 = 10
 CANNY_THRESH_2 = 100
+csv_folder = "csv/"
 input_folder = "images/"
 output_folder = "output/"
+
+def loadURLs(path):
+  urls = []
+  with open(path, mode='r') as csvfile:
+    line_count = 0
+    reader = csv.reader(csvfile, delimiter=',')
+    for row in reader:
+      if line_count != 0:
+        #-- pictureURL column
+        urls.append(row[4])
+      line_count += 1
+  return urls
 
 def cut(img):
   # crop image
@@ -16,8 +33,6 @@ def cut(img):
   edges = cv2.Canny(gray, CANNY_THRESH_1, CANNY_THRESH_2)
   kernel = np.ones((7,7),np.uint8)
   edges = cv2.dilate(edges, kernel, iterations = 2)
-  #edges = cv2.erode(edges, kernel)
-
 
   cnts, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
   cnt = sorted(cnts, key=cv2.contourArea)[-1]
@@ -33,16 +48,12 @@ def transBg(img):
   edges = cv2.Canny(gray, CANNY_THRESH_1, CANNY_THRESH_2)
   kernel = np.ones((7,7),np.uint8)
   edges = cv2.dilate(edges, kernel, iterations = 2)
-  #edges = cv2.erode(edges, kernel)
-
 
   roi, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
   cnt = sorted(roi, key=cv2.contourArea)[-1]
 
   mask = np.zeros(img.shape, img.dtype)
-
   cv2.fillPoly(mask, [cnt], (255,)*img.shape[2], )
-
   masked_image = cv2.bitwise_and(img, mask)
 
   return masked_image
@@ -56,10 +67,20 @@ def fourChannels(img):
   return img
 
 def main():
-  _, _, filenames = next(walk(input_folder))
+  start = time.time()
+  #-- First file from csv directory
+  path = csv_folder + os.listdir(csv_folder)[0]
 
-  print(filenames)
-  for file_name in filenames:
+  #-- returns list of pictureURL from csv
+  urls = loadURLs(path)
+
+  ssl._create_default_https_context = ssl._create_unverified_context
+  for url in urls:
+
+      # fetch image from url
+      file_name = "image_" + str(urls.index(url)) + ".png"
+      urllib.request.urlretrieve(url, input_folder + file_name)
+
       s_img = cv2.imread(input_folder + file_name, -1)
 
       # set to 4 channels
@@ -73,6 +94,8 @@ def main():
 
       cv2.imwrite(output_folder + file_name, s_img)
 
-      s_img = None
+      now = time.time()
+      elapsed = now - start
+      print(str(urls.index(url) + 1) + " of " + str(len(urls)) + " time: " + str(round(elapsed,2)) + " sec.")
 
 main()
