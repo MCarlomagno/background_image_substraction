@@ -76,23 +76,26 @@ def main():
 
   ssl._create_default_https_context = ssl._create_unverified_context
   for url in urls:
+      try:
+        # fetch image from url
+        file_name = "image_" + str(urls.index(url)) + ".png"
+        urllib.request.urlretrieve(url, input_folder + file_name)
 
-      # fetch image from url
-      file_name = "image_" + str(urls.index(url)) + ".png"
-      urllib.request.urlretrieve(url, input_folder + file_name)
+        s_img = cv2.imread(input_folder + file_name, -1)
 
-      s_img = cv2.imread(input_folder + file_name, -1)
+        # set to 4 channels
+        s_img = fourChannels(s_img)
 
-      # set to 4 channels
-      s_img = fourChannels(s_img)
+        # set background transparent
+        s_img = transBg(s_img)
 
-      # set background transparent
-      s_img = transBg(s_img)
+        # remove white background
+        s_img = cut(s_img)
 
-      # remove white background
-      s_img = cut(s_img)
+        cv2.imwrite(output_folder + file_name, s_img)
+      except Exception as e:
+        print(e)
 
-      cv2.imwrite(output_folder + file_name, s_img)
 
       now = time.time()
       elapsed = now - start
