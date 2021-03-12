@@ -69,36 +69,41 @@ def fourChannels(img):
 def main():
   start = time.time()
   #-- First file from csv directory
-  path = csv_folder + os.listdir(csv_folder)[0]
 
-  #-- returns list of pictureURL from csv
-  urls = loadURLs(path)
+  file_names = os.listdir(csv_folder)
 
-  ssl._create_default_https_context = ssl._create_unverified_context
-  for url in urls:
-      try:
-        # fetch image from url
-        file_name = "image_" + str(urls.index(url)) + ".png"
-        urllib.request.urlretrieve(url, input_folder + file_name)
+  paths = [csv_folder + f for f in file_names if f.endswith('.csv')]
+  print(paths)
 
-        s_img = cv2.imread(input_folder + file_name, -1)
+  for path in paths:
+    urls = loadURLs(path)
+    path_index = str(paths.index(path))
 
-        # set to 4 channels
-        s_img = fourChannels(s_img)
+    ssl._create_default_https_context = ssl._create_unverified_context
+    for url in urls:
+        try:
+          # fetch image from url
+          file_name = "image_" + path_index + "_" + str(urls.index(url)) + ".png"
+          urllib.request.urlretrieve(url, input_folder + file_name)
 
-        # set background transparent
-        s_img = transBg(s_img)
+          s_img = cv2.imread(input_folder + file_name, -1)
 
-        # remove white background
-        s_img = cut(s_img)
+          # set to 4 channels
+          s_img = fourChannels(s_img)
 
-        cv2.imwrite(output_folder + file_name, s_img)
-      except Exception as e:
-        print(e)
+          # set background transparent
+          s_img = transBg(s_img)
+
+          # remove white background
+          s_img = cut(s_img)
+
+          cv2.imwrite(output_folder + file_name, s_img)
+        except Exception as e:
+          print(e)
 
 
-      now = time.time()
-      elapsed = now - start
-      print(str(urls.index(url) + 1) + " of " + str(len(urls)) + " time: " + str(round(elapsed,2)) + " sec.")
+        now = time.time()
+        elapsed = now - start
+        print(str(urls.index(url) + 1) + " of " + str(len(urls)) + " time: " + str(round(elapsed,2)) + " sec.")
 
 main()
