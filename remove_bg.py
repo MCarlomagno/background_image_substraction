@@ -83,7 +83,7 @@ def main():
     for url in urls:
         try:
           # fetch image from url
-          file_name = "image_" + path_index + "_" + str(urls.index(url)) + ".png"
+          file_name = url.split("/")[-1].split('?')[0] + ".png"
           urllib.request.urlretrieve(url, input_folder + file_name)
 
           s_img = cv2.imread(input_folder + file_name, -1)
